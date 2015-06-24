@@ -1,0 +1,72 @@
+'''
+Project 2 - Connected components and graph resilience
+'''
+import poc_queue
+
+def bfs_visited(ugraph, start_node):
+    '''
+    Takes the undirected graph ugraph and the node start_node
+    and returns the set consisting of all nodes that are visited
+    by a breadth-first search that starts at start_node.
+    '''
+    node_queue = poc_queue.Queue()
+    visited = set([start_node])
+    node_queue.enqueue(start_node)
+    
+    while len(node_queue) > 0:
+        one_node = node_queue.dequeue()
+        for neighbor in ugraph[one_node]:
+            if (neighbor in visited) == 0:
+                visited.add(neighbor)
+                node_queue.enqueue(neighbor)
+            
+    return visited
+
+def cc_visited(ugraph):
+    '''
+    Takes the undirected graph ugraph and returns a list of sets,
+    where each set consists of all the nodes (and nothing else)
+    in a connected component, and there is exactly one set in the
+    list for each connected component in ugraph and nothing else.
+    '''
+    remaining_nodes = set(ugraph.keys())
+    connected_components = []
+    while len(remaining_nodes) > 0:
+        one_node = list(remaining_nodes)[0]
+        connected_set = bfs_visited(ugraph, one_node)
+        connected_components.append(connected_set)
+        remaining_nodes.difference_update(connected_set)
+        
+    return connected_components
+
+def largest_cc_size(ugraph):
+    '''
+    Takes the undirected graph ugraph and returns the size (an
+    integer) of the largest connected component in ugraph.
+    '''
+    connected_components = cc_visited(ugraph)
+    maxsize = 0
+    for connected_set in connected_components:
+        if len(connected_set) > maxsize:
+            maxsize = len(connected_set)
+            
+    return maxsize
+
+def compute_resilience(ugraph, attack_order):
+    '''
+    Takes the undirected graph ugraph, a list of nodes attack_order
+    and iterates through the nodes in attack_order. For each node
+    in the list, the function removes the given node and its edges
+    from the graph and then computes the size of the largest connected
+    component for the resulting graph.
+    '''
+    clst = [largest_cc_size(ugraph)]
+    for idx in range(len(attack_order)):
+        ugraph.pop(attack_order[idx])
+        for keys in ugraph:
+            if attack_order[idx] in ugraph[keys]:
+                ugraph[keys].remove(attack_order[idx])
+        clst.append(largest_cc_size(ugraph))
+        
+    return clst
+print compute_resilience({0:set([1]),1:set([0])},[0])
